@@ -15,6 +15,10 @@
 - Here is the diff from initial version to this mod
 https://github.com/intika/kde-dolphin-single-instance/commit/95048960e4712ab01a3a8610de02cee4eb9cdb93
 
+# Bugs  
+- Need to restart dolphin to get settings applied 
+- Does not work out of the box for desktop folder, we need to run "dbus-laucher dolphin %u" to get it to work, i uploaded a Dolphin.desktop to add to mime (default application for folder...)
+
 # Links
 https://git.reviewboard.kde.org/r/129043/
 
