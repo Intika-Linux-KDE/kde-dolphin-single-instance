@@ -14,6 +14,8 @@
 
 # Base Work Sources
 https://git.reviewboard.kde.org/r/129043/
+
 https://github.com/FadySGhatas/kde-dolphin-single-instance
+
 Big thanks to FadySGhatas
 
