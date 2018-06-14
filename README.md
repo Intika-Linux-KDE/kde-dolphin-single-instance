@@ -4,6 +4,7 @@
 - Features are made available on the settings page 
 - Setting for New tab to be always active and not opened in background 
 - Setting to set dolphin to a single instance thus new opened folder are opened in tabs 
+- If current window is minimized when oppening a folder the window is restored 
 
 # How to ?
 - Just add those files in the src folder of Dolphin 
