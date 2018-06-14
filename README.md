@@ -12,7 +12,7 @@
 # Complicated ? 
 - Just check the differents commits i started from the initial release to make changes visible ;)
 
-# Base Work Sources
+# Links
 https://git.reviewboard.kde.org/r/129043/
 
 https://github.com/FadySGhatas/kde-dolphin-single-instance
