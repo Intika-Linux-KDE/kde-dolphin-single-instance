@@ -12,6 +12,7 @@
 
 # Complicated ? 
 - Just check the differents commits i started from the initial release to make changes visible ;)
+https://github.com/intika/kde-dolphin-single-instance/commit/95048960e4712ab01a3a8610de02cee4eb9cdb93
 
 # Links
 https://git.reviewboard.kde.org/r/129043/
