@@ -47,7 +47,9 @@ StartupSettingsPage::StartupSettingsPage(const QUrl& url, QWidget* parent) :
     m_editableUrl(nullptr),
     m_showFullPath(nullptr),
     m_filterBar(nullptr),
-    m_showFullPathInTitlebar(nullptr)
+    m_showFullPathInTitlebar(nullptr),
+    m_singleInstance(nullptr),
+    m_newTabActive(nullptr)
 {
     QVBoxLayout* topLayout = new QVBoxLayout(this);
     QWidget* vBox = new QWidget(this);
@@ -107,6 +109,10 @@ StartupSettingsPage::StartupSettingsPage(const QUrl& url, QWidget* parent) :
     vBoxLayout->addWidget(m_filterBar);
     m_showFullPathInTitlebar = new QCheckBox(i18nc("@option:check Startup Settings", "Show full path in title bar"), vBox);
     vBoxLayout->addWidget(m_showFullPathInTitlebar);
+    m_singleInstance = new QCheckBox(i18nc("@option:check Startup Settings", "Force Single instance policy disallowing more than one window"), vBox);
+    vBoxLayout->addWidget(m_singleInstance);
+    m_newTabActive = new QCheckBox(i18nc("@option:check Startup Settings", "Newly opened tab are always active"), vBox);
+    vBoxLayout->addWidget(m_newTabActive);
 
     // Add a dummy widget with no restriction regarding
     // a vertical resizing. This assures that the dialog layout
@@ -123,6 +129,8 @@ StartupSettingsPage::StartupSettingsPage(const QUrl& url, QWidget* parent) :
     connect(m_showFullPath, &QCheckBox::toggled, this, &StartupSettingsPage::slotSettingsChanged);
     connect(m_filterBar,    &QCheckBox::toggled, this, &StartupSettingsPage::slotSettingsChanged);
     connect(m_showFullPathInTitlebar, &QCheckBox::toggled, this, &StartupSettingsPage::slotSettingsChanged);
+    connect(m_singleInstance, &QCheckBox::toggled, this, &StartupSettingsPage::slotSettingsChanged);
+    connect(m_newTabActive, &QCheckBox::toggled, this, &StartupSettingsPage::slotSettingsChanged);
 }
 
 StartupSettingsPage::~StartupSettingsPage()
@@ -146,6 +154,8 @@ void StartupSettingsPage::applySettings()
     settings->setShowFullPath(m_showFullPath->isChecked());
     settings->setFilterBar(m_filterBar->isChecked());
     settings->setShowFullPathInTitlebar(m_showFullPathInTitlebar->isChecked());
+    settings->setSingleInstance(m_singleInstance->isChecked());
+    settings->setNewTabActive(m_newTabActive->isChecked());
 
     settings->save();
 }
@@ -196,4 +206,6 @@ void StartupSettingsPage::loadSettings()
     m_showFullPath->setChecked(GeneralSettings::showFullPath());
     m_filterBar->setChecked(GeneralSettings::filterBar());
     m_showFullPathInTitlebar->setChecked(GeneralSettings::showFullPathInTitlebar());
+    m_singleInstance->setChecked(GeneralSettings::singleInstance());
+    m_newTabActive->setChecked(GeneralSettings::newTabActive());
 }

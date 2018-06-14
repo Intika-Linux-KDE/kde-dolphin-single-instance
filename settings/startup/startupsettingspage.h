@@ -63,6 +63,8 @@ private:
     QCheckBox* m_showFullPath;
     QCheckBox* m_filterBar;
     QCheckBox* m_showFullPathInTitlebar;
+    QCheckBox *m_singleInstance;
+    QCheckBox *m_newTabActive;
 };
 
 #endif

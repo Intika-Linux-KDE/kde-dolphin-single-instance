@@ -21,6 +21,7 @@
 
 #include "dolphin_version.h"
 #include "dolphinmainwindow.h"
+#include "dolphinsinglewindow.h"
 #include "dolphin_generalsettings.h"
 #include "dbusinterface.h"
 #include "global.h"
@@ -140,25 +141,30 @@ extern "C" Q_DECL_EXPORT int kdemain(int argc, char **argv)
         urls.append(urls.last());
     }
 
-    DolphinMainWindow* mainWindow = new DolphinMainWindow();
-    mainWindow->setAttribute(Qt::WA_DeleteOnClose);
-
-    if (parser.isSet(QStringLiteral("select"))) {
-        mainWindow->openFiles(urls, splitView);
+    if (GeneralSettings::singleInstance()) {
+        DolphinSingleWindow::open(urls);
+        return app.exec();
     } else {
-        mainWindow->openDirectories(urls, splitView);
-    }
+        DolphinMainWindow *mainWindow = new DolphinMainWindow();
+        mainWindow->setAttribute(Qt::WA_DeleteOnClose);
 
-    mainWindow->show();
-
-    if (app.isSessionRestored()) {
-        const QString className = KXmlGuiWindow::classNameOfToplevel(1);
-        if (className == QLatin1String("DolphinMainWindow")) {
-            mainWindow->restore(1);
+        if (parser.isSet(QStringLiteral("select"))) {
+            mainWindow->openFiles(urls, splitView);
         } else {
-           qCWarning(DolphinDebug) << "Unknown class " << className << " in session saved data!";
+            mainWindow->openDirectories(urls, splitView);
         }
-    }
 
-    return app.exec(); // krazy:exclude=crash;
+        mainWindow->show();
+
+        if (app.isSessionRestored()) {
+            const QString className = KXmlGuiWindow::classNameOfToplevel(1);
+            if (className == QLatin1String("DolphinMainWindow")) {
+                mainWindow->restore(1);
+            } else {
+            qCWarning(DolphinDebug) << "Unknown class " << className << " in session saved data!";
+            }
+        }
+        
+        return app.exec(); // krazy:exclude=crash;
+    }
 }

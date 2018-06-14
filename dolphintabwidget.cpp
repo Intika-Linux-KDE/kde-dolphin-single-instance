@@ -22,6 +22,7 @@
 #include "dolphintabbar.h"
 #include "dolphintabpage.h"
 #include "dolphinviewcontainer.h"
+#include "dolphin_generalsettings.h"
 
 #include <QApplication>
 #include <QDropEvent>
@@ -153,6 +154,11 @@ void DolphinTabWidget::openNewTab(const QUrl& primaryUrl, const QUrl& secondaryU
         // The DolphinViewContainer grabbed the keyboard focus. As the tab is opened
         // in background, assure that the previous focused widget gets the focus back.
         focusWidget->setFocus();
+    }
+    
+    //Intika new tab is always active 
+    if (GeneralSettings::newTabActive()) {
+        setCurrentIndex(count() - 1);
     }
 }
 
