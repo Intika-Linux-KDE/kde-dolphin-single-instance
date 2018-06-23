@@ -7,7 +7,7 @@
 - If current window is minimized when oppening a folder the window is restored 
 
 # How to ?
-- Just add those files in the src folder of Dolphin 
+- Just add those files in the src folder of Dolphin, And
 - Add 'dolphinsinglewindow.cpp' to src/CMakeLists.txt DOLPHINSRC and you are ready to go.
 
 # Complicated ? 
