@@ -1,4 +1,6 @@
 /***************************************************************************
+*   Copyright (C) 2019 by intika <intika@librefox.org>                    *
+*   Copyright (C) 2018 by intika <intika@librefox.org>                    *
 *   Copyright (C) 2016 by Fady S. Ghatas @ TiTrias                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *

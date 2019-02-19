@@ -156,7 +156,7 @@ void DolphinTabWidget::openNewTab(const QUrl& primaryUrl, const QUrl& secondaryU
         focusWidget->setFocus();
     }
     
-    //Intika new tab is always active 
+    // New tab is always active 
     if (GeneralSettings::newTabActive()) {
         setCurrentIndex(count() - 1);
     }

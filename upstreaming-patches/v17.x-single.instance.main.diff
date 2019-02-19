@@ -1,9 +1,21 @@
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index e1b63358d..e64af5721 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -198,6 +198,7 @@ install(FILES dolphinpart.desktop DESTINATION ${KDE_INSTALL_KSERVICES5DIR})
+ set(dolphinstatic_SRCS
+     dolphindockwidget.cpp
+     dolphinmainwindow.cpp
++    dolphinsinglewindow.cpp
+     dolphinviewcontainer.cpp
+     dolphincontextmenu.cpp
+     dolphintabbar.cpp
 diff --git a/src/dolphinsinglewindow.cpp b/src/dolphinsinglewindow.cpp
 new file mode 100644
-index 0000000..3e4580f
+index 000000000..2456373c0
 --- /dev/null
 +++ b/src/dolphinsinglewindow.cpp
-@@ -0,0 +1,105 @@
+@@ -0,0 +1,107 @@
 +/***************************************************************************
 +*   Copyright (C) 2019 by intika <intika@librefox.org>                    *
 +*   Copyright (C) 2018 by intika <intika@librefox.org>                    *
@@ -113,10 +125,10 @@ index 0000000..3e4580f
 +}
 diff --git a/src/dolphinsinglewindow.h b/src/dolphinsinglewindow.h
 new file mode 100644
-index 0000000..505cbc9
+index 000000000..8278ae59c
 --- /dev/null
 +++ b/src/dolphinsinglewindow.h
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,72 @@
 +/***************************************************************************
 +*   Copyright (C) 2019 by intika <intika@librefox.org>                    *
 +*   Copyright (C) 2018 by intika <intika@librefox.org>                    *
@@ -191,7 +203,7 @@ index 0000000..505cbc9
 +#endif // DOLPHIN_SINGLEWINDOW_H
 \ No newline at end of file
 diff --git a/src/dolphintabwidget.cpp b/src/dolphintabwidget.cpp
-index d9b7d7e..056f068 100644
+index d9b7d7e13..5d9993840 100644
 --- a/src/dolphintabwidget.cpp
 +++ b/src/dolphintabwidget.cpp
 @@ -22,6 +22,7 @@
@@ -207,7 +219,7 @@ index d9b7d7e..056f068 100644
          focusWidget->setFocus();
      }
 +
-+    // new tab is always active
++    // New tab is always active
 +    if (GeneralSettings::newTabActive()) {
 +        setCurrentIndex(count() - 1);
 +    }
@@ -215,7 +227,7 @@ index d9b7d7e..056f068 100644
  
  void DolphinTabWidget::openDirectories(const QList<QUrl>& dirs, bool splitView)
 diff --git a/src/main.cpp b/src/main.cpp
-index 3f2b841..e2da3d5 100644
+index 789a52996..e2da3d53e 100644
 --- a/src/main.cpp
 +++ b/src/main.cpp
 @@ -21,6 +21,7 @@
@@ -226,6 +238,38 @@ index 3f2b841..e2da3d5 100644
  #include "dolphin_generalsettings.h"
  #include "dbusinterface.h"
  #include "global.h"
+@@ -35,20 +36,20 @@
+ #include <KLocalizedString>
+ #include <Kdelibs4ConfigMigrator>
+ 
+-#ifndef Q_OS_WIN
+-#include <unistd.h>
+-#endif
+-#include <iostream>
++// #ifndef Q_OS_WIN
++// #include <unistd.h>
++// #endif
++// #include <iostream>
+ 
+ extern "C" Q_DECL_EXPORT int kdemain(int argc, char **argv)
+ {
+-#ifndef Q_OS_WIN
+-    // Check whether we are running as root
+-    if (getuid() == 0) {
+-        std::cout << "Executing Dolphin as root is not possible." << std::endl;
+-        return EXIT_FAILURE;
+-    }
+-#endif
++// #ifndef Q_OS_WIN
++//    // Check whether we are running as root
++//    if (getuid() == 0) {
++//        std::cout << "Executing Dolphin as root is not possible." << std::endl;
++//        return EXIT_FAILURE;
++//    }
++// #endif
+ 
+     QApplication app(argc, argv);
+     app.setAttribute(Qt::AA_UseHighDpiPixmaps, true);
 @@ -140,25 +141,30 @@ extern "C" Q_DECL_EXPORT int kdemain(int argc, char **argv)
          urls.append(urls.last());
      }
@@ -274,7 +318,7 @@ index 3f2b841..e2da3d5 100644
 +    }
  }
 diff --git a/src/settings/dolphin_generalsettings.kcfg b/src/settings/dolphin_generalsettings.kcfg
-index 5878abc..925ba4e 100644
+index 5878abcbe..925ba4e39 100644
 --- a/src/settings/dolphin_generalsettings.kcfg
 +++ b/src/settings/dolphin_generalsettings.kcfg
 @@ -46,6 +46,14 @@
@@ -293,7 +337,7 @@ index 5878abc..925ba4e 100644
              <label>Should the view properties be used for all folders</label>
              <default>false</default>
 diff --git a/src/settings/startup/startupsettingspage.cpp b/src/settings/startup/startupsettingspage.cpp
-index b216181..7ad8f1f 100644
+index b216181d8..7ad8f1f82 100644
 --- a/src/settings/startup/startupsettingspage.cpp
 +++ b/src/settings/startup/startupsettingspage.cpp
 @@ -47,7 +47,9 @@ StartupSettingsPage::StartupSettingsPage(const QUrl& url, QWidget* parent) :
@@ -344,7 +388,7 @@ index b216181..7ad8f1f 100644
 +    m_newTabActive->setChecked(GeneralSettings::newTabActive());
  }
 diff --git a/src/settings/startup/startupsettingspage.h b/src/settings/startup/startupsettingspage.h
-index 7a69cd3..234bdcb 100644
+index 7a69cd3d6..234bdcbbf 100644
 --- a/src/settings/startup/startupsettingspage.h
 +++ b/src/settings/startup/startupsettingspage.h
 @@ -63,6 +63,8 @@ private slots:
@@ -356,15 +400,3 @@ index 7a69cd3..234bdcb 100644
  };
  
  #endif
-diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index e1b6335..e64af57 100644
---- a/src/CMakeLists.txt
-+++ b/src/CMakeLists.txt
-@@ -198,6 +198,7 @@ install(FILES dolphinpart.desktop DESTINATION ${KDE_INSTALL_KSERVICES5DIR})
- set(dolphinstatic_SRCS
-     dolphindockwidget.cpp
-     dolphinmainwindow.cpp
-+    dolphinsinglewindow.cpp
-     dolphinviewcontainer.cpp
-     dolphincontextmenu.cpp
-     dolphintabbar.cpp
