@@ -206,8 +206,8 @@ index d9b7d7e..056f068 100644
          // in background, assure that the previous focused widget gets the focus back.
          focusWidget->setFocus();
      }
-+    
-+    // new tab is always active 
++
++    // new tab is always active
 +    if (GeneralSettings::newTabActive()) {
 +        setCurrentIndex(count() - 1);
 +    }
@@ -269,7 +269,7 @@ index 3f2b841..e2da3d5 100644
 +            qCWarning(DolphinDebug) << "Unknown class " << className << " in session saved data!";
 +            }
 +        }
-+        
++
 +        return app.exec(); // krazy:exclude=crash;
 +    }
  }

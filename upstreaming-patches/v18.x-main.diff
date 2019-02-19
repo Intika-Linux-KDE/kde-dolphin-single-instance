@@ -1,0 +1,13 @@
+diff --git a/src/org.kde.dolphin.desktop b/src/org.kde.dolphin.desktop
+index f187cef..f6418d2 100755
+--- a/src/org.kde.dolphin.desktop
++++ b/src/org.kde.dolphin.desktop
+@@ -42,7 +42,7 @@ Name[uk]=Dolphin
+ Name[x-test]=xxDolphinxx
+ Name[zh_CN]=Dolphin
+ Name[zh_TW]=Dolphin
+-Exec=dolphin %u
++Exec=dbus-launch dolphin "%u"
+ Icon=system-file-manager
+ Type=Application
+ X-DocPath=dolphin/index.html
