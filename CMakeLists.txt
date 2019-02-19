@@ -198,6 +198,7 @@ install(FILES dolphinpart.desktop DESTINATION ${KDE_INSTALL_KSERVICES5DIR})
 set(dolphinstatic_SRCS
     dolphindockwidget.cpp
     dolphinmainwindow.cpp
+    dolphinsinglewindow.cpp
     dolphinviewcontainer.cpp
     dolphincontextmenu.cpp
     dolphintabbar.cpp
