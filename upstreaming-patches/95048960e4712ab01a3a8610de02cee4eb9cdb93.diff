@@ -1,0 +1,370 @@
+diff --git a/src/dolphinsinglewindow.cpp b/src/dolphinsinglewindow.cpp
+new file mode 100644
+index 0000000..3e4580f
+--- /dev/null
++++ b/src/dolphinsinglewindow.cpp
+@@ -0,0 +1,105 @@
++/***************************************************************************
++*   Copyright (C) 2019 by intika <intika@librefox.org>                    *
++*   Copyright (C) 2018 by intika <intika@librefox.org>                    *
++*   Copyright (C) 2016 by Fady S. Ghatas @ TiTrias                        *
++*                                                                         *
++*   This program is free software; you can redistribute it and/or modify  *
++*   it under the terms of the GNU General Public License as published by  *
++*   the Free Software Foundation; either version 2 of the License, or     *
++*   (at your option) any later version.                                   *
++*                                                                         *
++*   This program is distributed in the hope that it will be useful,       *
++*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
++*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
++*   GNU General Public License for more details.                          *
++*                                                                         *
++*   You should have received a copy of the GNU General Public License     *
++*   along with this program; if not, write to the                         *
++*   Free Software Foundation, Inc.,                                       *
++*   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA            *
++***************************************************************************/
++
++#include "dolphinsinglewindow.h"
++#define TIME_OUT (1000)
++#define SERVER_NAME "SingleDolphin"
++DolphinSingleWindow *DolphinSingleWindow::window = 0;
++
++namespace {
++// Used for GeneralSettings::version() to determine whether
++// an updated version of Dolphin is running.
++const int CurrentDolphinVersion = 200;
++}
++
++void DolphinSingleWindow::open(QList<QUrl> urls) {
++  QLocalSocket socket;
++  socket.connectToServer(SERVER_NAME);
++  qDebug() << "Trying to connect to server";
++  int result = socket.waitForConnected(TIME_OUT);
++  qDebug() << result;
++  if (result) {
++    qDebug() << "Connected To Server";
++    // send a message to the server
++    QByteArray block;
++    QDataStream out(&block, QIODevice::WriteOnly);
++    out.setVersion(QDataStream::Qt_4_7);
++    out << urls;
++    out.device()->seek(0);
++    socket.write(block);
++    socket.flush();
++    qDebug() << "Client to Server : Open New Tab";
++    qDebug() << urls;
++    qDebug() << "Quitting";
++    return;
++  } else {
++    DolphinSingleWindow *window = getWindow();
++    window->openDirectories(urls, false);
++    window->show();
++    window->createNewServer();
++    //Restore window if minimized
++    window->showNormal();
++  }
++}
++
++DolphinSingleWindow *DolphinSingleWindow::getWindow() {
++  if (!window) {
++    qDebug() << "Creating the Window";
++    window = new DolphinSingleWindow();
++  }
++  return window;
++}
++DolphinSingleWindow::DolphinSingleWindow() { createNewServer(); }
++
++DolphinSingleWindow::~DolphinSingleWindow() {}
++
++void DolphinSingleWindow::hookLocalConnection() {
++  qDebug() << "Hook";
++  QLocalSocket *socket = server->nextPendingConnection();
++  if (socket) {
++    socket->waitForReadyRead(2 * TIME_OUT);
++    QList<QUrl> message;
++    QDataStream in(socket);
++    in >> message;
++    qDebug() << "Server Received new Message";
++    qDebug() << message;
++    delete socket;
++    QList<QUrl> urls;
++    if (urls.isEmpty()) {
++      // We need at least one URL to open Dolphin
++      urls.append(Dolphin::homeUrl());
++    }
++
++    window->openDirectories(message, false);
++    //Restore window if minimized
++    window->showNormal();
++  }
++}
++void DolphinSingleWindow::createNewServer() {
++  server = new QLocalServer(this);
++  connect(server, SIGNAL(newConnection()), this, SLOT(hookLocalConnection()));
++  if (!server->listen(SERVER_NAME)) {
++    if (server->serverError() == QAbstractSocket::AddressInUseError) {
++      qDebug() << "Server Address is in use, Removing it =D";
++      QLocalServer::removeServer(SERVER_NAME); // <-- A key
++      server->listen(SERVER_NAME);             // Listen again
++    }
++  }
++  qDebug() << "Server Address is Set";
++}
+diff --git a/src/dolphinsinglewindow.h b/src/dolphinsinglewindow.h
+new file mode 100644
+index 0000000..505cbc9
+--- /dev/null
++++ b/src/dolphinsinglewindow.h
+@@ -0,0 +1,70 @@
++/***************************************************************************
++*   Copyright (C) 2019 by intika <intika@librefox.org>                    *
++*   Copyright (C) 2018 by intika <intika@librefox.org>                    *
++*   Copyright (C) 2016 by Fady S. Ghatas <fady@titrias.com>               *
++*                                                                         *
++*   This program is free software; you can redistribute it and/or modify  *
++*   it under the terms of the GNU General Public License as published by  *
++*   the Free Software Foundation; either version 2 of the License, or     *
++*   (at your option) any later version.                                   *
++*                                                                         *
++*   This program is distributed in the hope that it will be useful,       *
++*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
++*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
++*   GNU General Public License for more details.                          *
++*                                                                         *
++*   You should have received a copy of the GNU General Public License     *
++*   along with this program; if not, write to the                         *
++*   Free Software Foundation, Inc.,                                       *
++*   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA            *
++***************************************************************************/
++
++#ifndef DOLPHIN_SINGLEWINDOW_H
++#define DOLPHIN_SINGLEWINDOW_H
++
++#include "dolphinmainwindow.h"
++#include "global.h"
++#include <QApplication>
++#include <QIcon>
++#include <QList>
++#include <QLocalServer>
++#include <QLocalSocket>
++#include <QObject>
++#include <QPointer>
++#include <QUrl>
++#include <QWidget>
++#include <QtNetwork/QLocalServer>
++#include <kxmlguiwindow.h>
++
++/**
++ * @short Single window for Dolphin.
++ *
++ * Handles the menus, toolbars and Dolphin views.
++ */
++class DolphinSingleWindow : public DolphinMainWindow {
++  Q_OBJECT
++  Q_CLASSINFO("D-Bus Interface", "org.kde.dolphin.SingleWindow")
++  Q_PROPERTY(int id READ getId SCRIPTABLE true)
++
++public:
++  DolphinSingleWindow();
++  virtual ~DolphinSingleWindow();
++  QLocalServer *server;
++  QString serverName;
++  static DolphinSingleWindow *window;
++  static DolphinSingleWindow *getWindow();
++  /**
++   * Open the list of urls in the single instance window
++   * @param urls URLs of directories to open.
++   */
++  static void open(QList<QUrl> urls);
++  /**
++   * Create new Server that can receive new tab creation requests.
++   */
++  void createNewServer();
++
++public slots:
++  /**
++   * Server Event Listener
++   */
++  void hookLocalConnection();
++};
++#endif // DOLPHIN_SINGLEWINDOW_H
+\ No newline at end of file
+diff --git a/src/dolphintabwidget.cpp b/src/dolphintabwidget.cpp
+index d9b7d7e..056f068 100644
+--- a/src/dolphintabwidget.cpp
++++ b/src/dolphintabwidget.cpp
+@@ -22,6 +22,7 @@
+ #include "dolphintabbar.h"
+ #include "dolphintabpage.h"
+ #include "dolphinviewcontainer.h"
++#include "dolphin_generalsettings.h"
+ 
+ #include <QApplication>
+ #include <QDropEvent>
+@@ -154,6 +155,11 @@ void DolphinTabWidget::openNewTab(const QUrl& primaryUrl, const QUrl& secondaryU
+         // in background, assure that the previous focused widget gets the focus back.
+         focusWidget->setFocus();
+     }
++    
++    // new tab is always active 
++    if (GeneralSettings::newTabActive()) {
++        setCurrentIndex(count() - 1);
++    }
+ }
+ 
+ void DolphinTabWidget::openDirectories(const QList<QUrl>& dirs, bool splitView)
+diff --git a/src/main.cpp b/src/main.cpp
+index 3f2b841..e2da3d5 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -21,6 +21,7 @@
+ 
+ #include "dolphin_version.h"
+ #include "dolphinmainwindow.h"
++#include "dolphinsinglewindow.h"
+ #include "dolphin_generalsettings.h"
+ #include "dbusinterface.h"
+ #include "global.h"
+@@ -140,25 +141,30 @@ extern "C" Q_DECL_EXPORT int kdemain(int argc, char **argv)
+         urls.append(urls.last());
+     }
+ 
+-    DolphinMainWindow* mainWindow = new DolphinMainWindow();
+-    mainWindow->setAttribute(Qt::WA_DeleteOnClose);
+-
+-    if (parser.isSet(QStringLiteral("select"))) {
+-        mainWindow->openFiles(urls, splitView);
++    if (GeneralSettings::singleInstance()) {
++        DolphinSingleWindow::open(urls);
++        return app.exec();
+     } else {
+-        mainWindow->openDirectories(urls, splitView);
+-    }
+-
+-    mainWindow->show();
++        DolphinMainWindow *mainWindow = new DolphinMainWindow();
++        mainWindow->setAttribute(Qt::WA_DeleteOnClose);
+ 
+-    if (app.isSessionRestored()) {
+-        const QString className = KXmlGuiWindow::classNameOfToplevel(1);
+-        if (className == QLatin1String("DolphinMainWindow")) {
+-            mainWindow->restore(1);
++        if (parser.isSet(QStringLiteral("select"))) {
++            mainWindow->openFiles(urls, splitView);
+         } else {
+-           qCWarning(DolphinDebug) << "Unknown class " << className << " in session saved data!";
++            mainWindow->openDirectories(urls, splitView);
+         }
+-    }
+ 
+-    return app.exec(); // krazy:exclude=crash;
++        mainWindow->show();
++
++        if (app.isSessionRestored()) {
++            const QString className = KXmlGuiWindow::classNameOfToplevel(1);
++            if (className == QLatin1String("DolphinMainWindow")) {
++                mainWindow->restore(1);
++            } else {
++            qCWarning(DolphinDebug) << "Unknown class " << className << " in session saved data!";
++            }
++        }
++        
++        return app.exec(); // krazy:exclude=crash;
++    }
+ }
+diff --git a/src/settings/dolphin_generalsettings.kcfg b/src/settings/dolphin_generalsettings.kcfg
+index 5878abc..925ba4e 100644
+--- a/src/settings/dolphin_generalsettings.kcfg
++++ b/src/settings/dolphin_generalsettings.kcfg
+@@ -46,6 +46,14 @@
+             <label>Should the filter bar be shown</label>
+             <default>false</default>
+         </entry>
++        <entry name="SingleInstance" type="Bool">
++            <label>Force Single instance policy disallowing more than one window</label>
++            <default>false</default>
++        </entry>
++        <entry name="NewTabActive" type="Bool">
++            <label>Newly opened tab are always active</label>
++            <default>false</default>
++        </entry>
+         <entry name="GlobalViewProps" type="Bool">
+             <label>Should the view properties be used for all folders</label>
+             <default>false</default>
+diff --git a/src/settings/startup/startupsettingspage.cpp b/src/settings/startup/startupsettingspage.cpp
+index b216181..7ad8f1f 100644
+--- a/src/settings/startup/startupsettingspage.cpp
++++ b/src/settings/startup/startupsettingspage.cpp
+@@ -47,7 +47,9 @@ StartupSettingsPage::StartupSettingsPage(const QUrl& url, QWidget* parent) :
+     m_editableUrl(nullptr),
+     m_showFullPath(nullptr),
+     m_filterBar(nullptr),
+-    m_showFullPathInTitlebar(nullptr)
++    m_showFullPathInTitlebar(nullptr),
++    m_singleInstance(nullptr),
++    m_newTabActive(nullptr)
+ {
+     QVBoxLayout* topLayout = new QVBoxLayout(this);
+     QWidget* vBox = new QWidget(this);
+@@ -107,6 +109,10 @@ StartupSettingsPage::StartupSettingsPage(const QUrl& url, QWidget* parent) :
+     vBoxLayout->addWidget(m_filterBar);
+     m_showFullPathInTitlebar = new QCheckBox(i18nc("@option:check Startup Settings", "Show full path in title bar"), vBox);
+     vBoxLayout->addWidget(m_showFullPathInTitlebar);
++    m_singleInstance = new QCheckBox(i18nc("@option:check Startup Settings", "Force Single instance policy disallowing more than one window"), vBox);
++    vBoxLayout->addWidget(m_singleInstance);
++    m_newTabActive = new QCheckBox(i18nc("@option:check Startup Settings", "Newly opened tab are always active"), vBox);
++    vBoxLayout->addWidget(m_newTabActive);
+ 
+     // Add a dummy widget with no restriction regarding
+     // a vertical resizing. This assures that the dialog layout
+@@ -123,6 +129,8 @@ StartupSettingsPage::StartupSettingsPage(const QUrl& url, QWidget* parent) :
+     connect(m_showFullPath, &QCheckBox::toggled, this, &StartupSettingsPage::slotSettingsChanged);
+     connect(m_filterBar,    &QCheckBox::toggled, this, &StartupSettingsPage::slotSettingsChanged);
+     connect(m_showFullPathInTitlebar, &QCheckBox::toggled, this, &StartupSettingsPage::slotSettingsChanged);
++    connect(m_singleInstance, &QCheckBox::toggled, this, &StartupSettingsPage::slotSettingsChanged);
++    connect(m_newTabActive, &QCheckBox::toggled, this, &StartupSettingsPage::slotSettingsChanged);
+ }
+ 
+ StartupSettingsPage::~StartupSettingsPage()
+@@ -146,6 +154,8 @@ void StartupSettingsPage::applySettings()
+     settings->setShowFullPath(m_showFullPath->isChecked());
+     settings->setFilterBar(m_filterBar->isChecked());
+     settings->setShowFullPathInTitlebar(m_showFullPathInTitlebar->isChecked());
++    settings->setSingleInstance(m_singleInstance->isChecked());
++    settings->setNewTabActive(m_newTabActive->isChecked());
+ 
+     settings->save();
+ }
+@@ -196,4 +206,6 @@ void StartupSettingsPage::loadSettings()
+     m_showFullPath->setChecked(GeneralSettings::showFullPath());
+     m_filterBar->setChecked(GeneralSettings::filterBar());
+     m_showFullPathInTitlebar->setChecked(GeneralSettings::showFullPathInTitlebar());
++    m_singleInstance->setChecked(GeneralSettings::singleInstance());
++    m_newTabActive->setChecked(GeneralSettings::newTabActive());
+ }
+diff --git a/src/settings/startup/startupsettingspage.h b/src/settings/startup/startupsettingspage.h
+index 7a69cd3..234bdcb 100644
+--- a/src/settings/startup/startupsettingspage.h
++++ b/src/settings/startup/startupsettingspage.h
+@@ -63,6 +63,8 @@ private slots:
+     QCheckBox* m_showFullPath;
+     QCheckBox* m_filterBar;
+     QCheckBox* m_showFullPathInTitlebar;
++    QCheckBox *m_singleInstance;
++    QCheckBox *m_newTabActive;
+ };
+ 
+ #endif
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index e1b6335..e64af57 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -198,6 +198,7 @@ install(FILES dolphinpart.desktop DESTINATION ${KDE_INSTALL_KSERVICES5DIR})
+ set(dolphinstatic_SRCS
+     dolphindockwidget.cpp
+     dolphinmainwindow.cpp
++    dolphinsinglewindow.cpp
+     dolphinviewcontainer.cpp
+     dolphincontextmenu.cpp
+     dolphintabbar.cpp
